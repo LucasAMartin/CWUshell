@@ -2,15 +2,13 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
+#include <sys/utsname.h>
 #include "shell.h"
 
 /*
 gcc -o shell main.c prompt.c
 ./shell
 */
-
-// Found on https://stackoverflow.com/questions/17271576/clear-screen-in-c-and-c-on-unix-based-system
-#define clear() printf("\033[H\033[J")
 
 char *prompt = NULL;
 
@@ -69,7 +67,6 @@ void parseCommand(char *command, char **parsedCommands){
         i++;
     }
     parsedCommands[i] = NULL; // Mark the end of the tokens
-    free(commandCopy);
 }
 
 void executeCommand(char *command, char **parsedCommands) {
@@ -80,7 +77,7 @@ void executeCommand(char *command, char **parsedCommands) {
     } else if (strcmp(parsedCommands[0], "fileinfo") == 0) {
         printf("fileinfo\n");
     } else if (strcmp(parsedCommands[0], "osinfo") == 0) {
-        printf("osinfo\n");
+        osinfoCommand(parsedCommands);
     } else {
         system(command);
     }
@@ -102,6 +99,59 @@ void exitCommand(char **parsedCommands){
         exit(0);
     }   
 } 
+
+void osinfoCommand(char **parsedCommands) {
+    struct utsname osinfo;
+    uname(&osinfo);
+
+    int s_used = 0, v_used = 0, a_used = 0;
+
+    // If no switch is provided, print all information
+    if (parsedCommands[1] == NULL){
+        s_used = 1, v_used = 1, a_used = 1;
+    }
+
+    // Iterate over the parsedCommands array
+    for (int i = 1; parsedCommands[i] != NULL; i++) {
+        // If the argument starts with '-', it's a switch
+        if (parsedCommands[i][0] == '-') {
+            // If the argument is just '-', it's an error
+            if (parsedCommands[i][1] == '\0') {
+                printf("Unknown switch: -\n");
+                return;
+            }
+            // Iterate over the characters in the switch
+            for (int j = 1; parsedCommands[i][j] != '\0'; j++) {
+                switch (parsedCommands[i][j]) {
+                    case 's':
+                        s_used = 1;
+                        break;
+                    case 'v':
+                        v_used = 1;
+                        break;
+                    case 'a':
+                        a_used = 1;
+                        break;
+                    default:
+                        printf("Unknown switch: -%c\n", parsedCommands[i][j]);
+                        return; // Stop execution if an unknown switch is encountered
+                }
+            }
+        } else {
+            // Arguments that don't start with '-' are errors
+            printf("Unknown argument: %s\n", parsedCommands[i]);
+            return;
+        }
+    }
+
+    // Print the information for used switches
+    if (s_used) printf("Operating System: %s\n", osinfo.sysname);
+    if (v_used) printf("OS Version: %s\n", osinfo.release);
+    if (a_used) printf("Computer Architecture: %s\n", osinfo.machine);
+}
+
+
+
 
 void promptCommand(char **parsedCommands){
     if (parsedCommands[1] != NULL) {
