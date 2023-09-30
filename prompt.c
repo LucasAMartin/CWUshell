@@ -1,12 +1,12 @@
 #include <stdio.h>
 #include "shell.h"
 
-void print_prompt1(void)
+void printPrompt1(void)
 {
     fprintf(stderr, "cwushell>> ");
 }
 
-void print_prompt2(void)
+void printPrompt2(void)
 {
     fprintf(stderr, "> ");
 }

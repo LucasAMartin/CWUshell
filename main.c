@@ -15,39 +15,25 @@ gcc -o shell main.c prompt.c
 int main()
 {
     char *command;
+    char *parsedCommands[30];
 
     while(1) {
-        print_prompt1();
+        printPrompt1();
 
-        command = read_command();
+        command = readCommand();
 
-        if(!command)
-        {
-            exit(EXIT_SUCCESS);
-        }
-
-        if(command[0] == '\0' || strcmp(command, "\n") == 0)
-        {
-            free(command);
-            continue;
-        }
-
-        if(strcmp(command, "exit\n") == 0)
-        {
-            free(command);
-            break;
-        }
-
-        printf("%s\n", command);
+        parseCommand(command, parsedCommands);
+        executeCommand(parsedCommands);
 
         free(command);
 
     }
 
-    exit(EXIT_SUCCESS);
+    free(command);
+    return 0;
 }
 
-char *read_command(void)
+char *readCommand(void)
 {
     char input[1024];
     char *output= NULL;
@@ -65,6 +51,44 @@ char *read_command(void)
 
         strcpy(output, input);
     }
-
     return output;
+}
+
+void parseCommand(char *command, char **parsedCommands){
+    char *token;
+    char *rest = command;
+    int i = 0;
+
+    while ((token = strtok_r(rest, " ", &rest))) {
+        parsedCommands[i] = token;
+        i++;
+    }
+    parsedCommands[i] = NULL; // Mark the end of the tokens
+}
+
+void executeCommand(char **parsedCommands) {
+    if (strcmp(parsedCommands[0], "exit") == 0) {
+        if (parsedCommands[1] != NULL) {
+            char *end;
+            long exitStatus = strtol(parsedCommands[1], &end, 10);
+            if (*end == '\0' && exitStatus >= 0 && exitStatus <= 255) {
+                // It's a valid integer, so we can exit.
+                exit((int)exitStatus);
+            } else {
+                // It's not a valid integer.
+                printf("Invalid exit status: %s\n", parsedCommands[1]);
+            }
+        } else {
+            // No exit status provided, so we exit with status 0.
+            exit(0);
+        }
+    } else if (strcmp(parsedCommands[0], "prompt") == 0) {
+        printf("prompt\n");
+    } else if (strcmp(parsedCommands[0], "fileinfo") == 0) {
+        printf("fileinfo\n");
+    } else if (strcmp(parsedCommands[0], "osinfo") == 0) {
+        printf("osinfo\n");
+    } else {
+        printf("system\n");
+    }
 }
