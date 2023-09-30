@@ -12,20 +12,22 @@ gcc -o shell main.c prompt.c
 // Found on https://stackoverflow.com/questions/17271576/clear-screen-in-c-and-c-on-unix-based-system
 #define clear() printf("\033[H\033[J")
 
-char *prompt = "cwushell";
+char *prompt = NULL;
 
 int main()
 {
     char *command;
     char *parsedCommands[30];
+    prompt = strdup("cwushell>");
+
 
     while(1) {
-        fprintf(stderr, "%s", prompt);
+        fprintf(stderr, "%s ", prompt);
 
         command = readCommand();
 
         parseCommand(command, parsedCommands);
-        executeCommand(parsedCommands);
+        executeCommand(command, parsedCommands);
 
         free(command);
     }
@@ -56,7 +58,8 @@ char *readCommand(void)
 
 void parseCommand(char *command, char **parsedCommands){
     char *token;
-    char *rest = command;
+    char *commandCopy = strdup(command);
+    char *rest = commandCopy;
     int i = 0;
 
     while ((token = strtok_r(rest, " ", &rest))) {
@@ -66,9 +69,10 @@ void parseCommand(char *command, char **parsedCommands){
         i++;
     }
     parsedCommands[i] = NULL; // Mark the end of the tokens
+    free(commandCopy);
 }
 
-void executeCommand(char **parsedCommands) {
+void executeCommand(char *command, char **parsedCommands) {
     if (strcmp(parsedCommands[0], "exit") == 0) {
         exitCommand(parsedCommands);
     } else if (strcmp(parsedCommands[0], "prompt") == 0) {
@@ -78,7 +82,7 @@ void executeCommand(char **parsedCommands) {
     } else if (strcmp(parsedCommands[0], "osinfo") == 0) {
         printf("osinfo\n");
     } else {
-        printf("system\n");
+        system(command);
     }
 } 
 
@@ -117,5 +121,6 @@ void promptCommand(char **parsedCommands){
         prompt = strdup("cwushell>"); // Allocate new memory for "cwushell"
     } 
 }
+
 
 
