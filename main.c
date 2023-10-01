@@ -2,11 +2,13 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <time.h>
 #include <sys/utsname.h>
 #include "shell.h"
 
-/*
-gcc -o shell main.c prompt.c
+/* 
+gcc -o shell main.c
 ./shell
 */
 
@@ -17,7 +19,6 @@ int main()
     char *command;
     char *parsedCommands[30];
     prompt = strdup("cwushell>");
-
 
     while(1) {
         fprintf(stderr, "%s ", prompt);
@@ -75,7 +76,7 @@ void executeCommand(char *command, char **parsedCommands) {
     } else if (strcmp(parsedCommands[0], "prompt") == 0) {
         promptCommand(parsedCommands);
     } else if (strcmp(parsedCommands[0], "fileinfo") == 0) {
-        printf("fileinfo\n");
+        fileinfoCommand(parsedCommands);
     } else if (strcmp(parsedCommands[0], "osinfo") == 0) {
         osinfoCommand(parsedCommands);
     } else {
@@ -100,15 +101,35 @@ void exitCommand(char **parsedCommands){
     }   
 } 
 
-void osinfoCommand(char **parsedCommands) {
-    struct utsname osinfo;
-    uname(&osinfo);
+void fileinfoCommand(char **parsedCommands) {
+    struct stat fileinfo;
+    char *filename = parsedCommands[1];
 
-    int s_used = 0, v_used = 0, a_used = 0;
+    // Check for help switch
+    if (parsedCommands[1] == NULL || parsedCommands[1] != NULL && (strcmp(parsedCommands[1], "-h") == 0 || strcmp(parsedCommands[1], "--help") == 0)) {
+        printf("fileinfo supports the following switches:\n");
+        printf("-i: Print the inode number of the file\n");
+        printf("-t: Print the type of the file\n");
+        printf("-m: Print the last modification date of the file\n");
 
-    // If no switch is provided, print all information
+         return;
+    }
+
+    // Check if filename is provided
+    if (filename == NULL) {
+        printf("Please provide a filename.\n");
+        return;
+    }
+
+    // Get file info
+    if (stat(filename, &fileinfo) != 0) {
+        perror("Error getting file info");
+        return;
+    }
+
+    int i_used = 0, t_used = 0, m_used = 0;
     if (parsedCommands[1] == NULL){
-        s_used = 1, v_used = 1, a_used = 1;
+        i_used = 1, t_used = 1, m_used = 1;
     }
 
     // Iterate over the parsedCommands array
@@ -117,7 +138,76 @@ void osinfoCommand(char **parsedCommands) {
         if (parsedCommands[i][0] == '-') {
             // If the argument is just '-', it's an error
             if (parsedCommands[i][1] == '\0') {
-                printf("Unknown switch: -\n");
+                printf("Unknown switch: -\nTry 'fileinfo --help' for more information.\n");
+                fflush(stdout);
+                return;
+            }
+            // Iterate over the characters in the switch
+            for (int j = 1; parsedCommands[i][j] != '\0'; j++) {
+                switch (parsedCommands[i][j]) {
+                    case 'i':
+                        i_used = 1;
+                        break;
+                    case 't':
+                        t_used = 1;
+                        break;
+                    case 'm':
+                        m_used = 1;
+                        break;
+                    default:
+                        printf("Unknown switch: -%c\nTry 'fileinfo --help' for more information.\n", parsedCommands[i][j]);
+                        fflush(stdout);
+                        return; // Stop execution if an unknown switch is encountered
+                }
+            }
+        } 
+    }
+
+    // Print the information for used switches
+    if (i_used) printf("Inode number: %ld\n", (long)fileinfo.st_ino);
+    if (t_used) {
+        printf("File type: ");
+        if (S_ISREG(fileinfo.st_mode)) {
+            printf("regular file\n");
+        } else if (S_ISDIR(fileinfo.st_mode)) {
+            printf("directory\n");
+        } else if (S_ISLNK(fileinfo.st_mode)) {
+         printf("symbolic link\n");
+        } else {
+          printf("other\n");
+        }
+    }
+    if (m_used) {
+        char date[20];
+        strftime(date, 20, "%Y-%m-%d %H:%M:%S", localtime(&(fileinfo.st_mtime)));
+        printf("Last modification date: %s\n", date);
+    }
+    
+}
+
+void osinfoCommand(char **parsedCommands) {
+    struct utsname osinfo;
+    uname(&osinfo);
+
+    // Check for help switch
+    if (parsedCommands[1] == NULL || parsedCommands[1] != NULL && (strcmp(parsedCommands[1], "-h") == 0 || strcmp(parsedCommands[1], "--help") == 0)) {
+         printf("osinfo supports the following switches:\n");
+         printf("-s: Print the operating system name\n");
+         printf("-v: Print the operating system version\n");
+         printf("-a: Print the computer architecture\n");
+         return;
+    }
+
+    int s_used = 0, v_used = 0, a_used = 0;
+
+    // Iterate over the parsedCommands array
+    for (int i = 1; parsedCommands[i] != NULL; i++) {
+        // If the argument starts with '-', it's a switch
+        if (parsedCommands[i][0] == '-') {
+            // If the argument is just '-', it's an error
+            if (parsedCommands[i][1] == '\0') {
+                printf("Unknown switch: -\nTry 'osinfo --help' for more information.\n");
+                fflush(stdout);
                 return;
             }
             // Iterate over the characters in the switch
@@ -133,13 +223,15 @@ void osinfoCommand(char **parsedCommands) {
                         a_used = 1;
                         break;
                     default:
-                        printf("Unknown switch: -%c\n", parsedCommands[i][j]);
+                        printf("Unknown switch: -%c\nTry 'osinfo --help' for more information.\n", parsedCommands[i][j]);
+                        fflush(stdout);
                         return; // Stop execution if an unknown switch is encountered
                 }
             }
         } else {
             // Arguments that don't start with '-' are errors
-            printf("Unknown argument: %s\n", parsedCommands[i]);
+            printf("Unknown argument: %s\nTry 'osinfo --help' for more information.\n", parsedCommands[i]);
+            fflush(stdout);
             return;
         }
     }
