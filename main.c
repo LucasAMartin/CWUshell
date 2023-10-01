@@ -7,6 +7,8 @@
 #include <sys/utsname.h>
 
 /* 
+RUN COMMAND
+
 gcc -o shell main.c
 ./shell
 */
@@ -22,6 +24,26 @@ void promptCommand(char **parsedCommands);
 
 // Global variable for the command prompt
 char *prompt = NULL;
+
+int main()
+{
+    char *command;
+    char *parsedCommands[30];
+    prompt = strdup("cwushell>");
+
+    while(1) {
+        fprintf(stderr, "%s ", prompt);
+
+        command = readInput();
+
+        parseInput(command, parsedCommands);
+        executeInput(command, parsedCommands);
+
+        free(command);
+    }
+
+    return 0;
+}
 
 // Function to read input from the user
 char *readInput(void)
@@ -278,24 +300,4 @@ void osinfoCommand(char **parsedCommands) {
     if (s_used) printf("Operating System: %s\n", osinfo.sysname);
     if (v_used) printf("OS Version: %s\n", osinfo.release);
     if (a_used) printf("Computer Architecture: %s\n", osinfo.machine);
-}
-
-int main()
-{
-    char *command;
-    char *parsedCommands[30];
-    prompt = strdup("cwushell>");
-
-    while(1) {
-        fprintf(stderr, "%s ", prompt);
-
-        command = readInput();
-
-        parseInput(command, parsedCommands);
-        executeInput(command, parsedCommands);
-
-        free(command);
-    }
-
-    return 0;
 }
