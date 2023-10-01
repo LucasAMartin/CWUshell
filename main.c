@@ -11,6 +11,7 @@ RUN COMMAND
 
 gcc -o shell main.c
 ./shell
+
 */
 
 // Function prototypes
@@ -32,7 +33,7 @@ int main()
     prompt = strdup("cwushell>");
 
     while(1) {
-        fprintf(stderr, "%s ", prompt);
+        printf("%s ", prompt);
 
         command = readInput();
 
@@ -110,7 +111,6 @@ void exitCommand(char **parsedCommands){
         printf("Usage: exit [n]\n");
         printf("Exit supports an optional exit value:\n");
         printf("n: Exit value of the shell's execution\n");
-        fflush(stdout);
         return;
     }
     if (parsedCommands[1] != NULL) {
@@ -136,7 +136,6 @@ void promptCommand(char **parsedCommands){
         printf("By default prompt will be reset to cwushell>\n");
         printf("Prompt supports an optional prompt value:\n");
         printf("new_prompt: New prompt to be used\n");
-        fflush(stdout);
         return;
     }
     if (parsedCommands[1] != NULL) {
@@ -168,7 +167,6 @@ void fileinfoCommand(char **parsedCommands) {
         printf("-i: Print the inode number of the file\n");
         printf("-t: Print the type of the file\n");
         printf("-m: Print the last modification date of the file\n");
-        fflush(stdout);
         return;
     }
 
@@ -197,7 +195,6 @@ void fileinfoCommand(char **parsedCommands) {
             // If the argument is just '-', it's an error
             if (parsedCommands[i][1] == '\0') {
                 printf("Unknown switch: -\nTry 'fileinfo --help' for more information.\n");
-                fflush(stdout);
                 return;
             }
             // Iterate over the characters in the switch
@@ -214,7 +211,6 @@ void fileinfoCommand(char **parsedCommands) {
                         break;
                     default:
                         printf("Unknown switch: -%c\nTry 'fileinfo --help' for more information.\n", parsedCommands[i][j]);
-                        fflush(stdout);
                         return; // Stop execution if an unknown switch is encountered
                 }
             }
@@ -254,7 +250,6 @@ void osinfoCommand(char **parsedCommands) {
         printf("-s: Print the operating system name\n");
         printf("-v: Print the operating system version\n");
         printf("-a: Print the computer architecture\n");
-        fflush(stdout);
         return;
     }
 
@@ -267,7 +262,6 @@ void osinfoCommand(char **parsedCommands) {
             // If the argument is just '-', it's an error
             if (parsedCommands[i][1] == '\0') {
                 printf("Unknown switch: -\nTry 'osinfo --help' for more information.\n");
-                fflush(stdout);
                 return;
             }
             // Iterate over the characters in the switch
@@ -284,14 +278,12 @@ void osinfoCommand(char **parsedCommands) {
                         break;
                     default:
                         printf("Unknown switch: -%c\nTry 'osinfo --help' for more information.\n", parsedCommands[i][j]);
-                        fflush(stdout);
                         return; // Stop execution if an unknown switch is encountered
                 }
             }
         } else {
             // Arguments that don't start with '-' are errors
             printf("Unknown argument: %s\nTry 'osinfo --help' for more information.\n", parsedCommands[i]);
-            fflush(stdout);
             return;
         }
     }
