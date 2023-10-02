@@ -29,13 +29,17 @@ char *prompt = NULL;
 int main()
 {
     char *command;
-    char *parsedCommands[30];
+    char *parsedCommands[8];
     prompt = strdup("cwushell>");
 
     while(1) {
         printf("%s ", prompt);
 
         command = readInput();
+        if (!command) {
+            fprintf(stderr, "error: failed to read input\n");
+            continue;
+        }
 
         parseInput(command, parsedCommands);
         executeInput(command, parsedCommands);
@@ -43,43 +47,46 @@ int main()
         free(command);
     }
 
+    free(prompt);
+    for (int i = 0; parsedCommands[i]; i++) {
+        free(parsedCommands[i]);
+    }
+
     return 0;
 }
 
-// Function to read input from the user
 char *readInput(void)
 {
-    char input[1024];
-    char *output= NULL;
-
-    // Read a line from stdin
-    if(fgets(input, 1024, stdin))
+    char *output = malloc(128);
+    if(!output)
     {
-        int inputLength = strlen(input);
+        fprintf(stderr, "error: failed to alloc buffer: %s\n", strerror(errno));
+        return NULL;
+    }
 
-        // Allocate memory for the output string
-        output = malloc(inputLength+1);
+    // Read a line from stdin into output
+    if(fgets(output, 128, stdin))
+    {
+        // Resize output to match the actual input length
+        output = realloc(output, strlen(output) + 1);
         if(!output)
         {
-            fprintf(stderr, "error: failed to alloc buffer: %s\n", strerror(errno));
+            fprintf(stderr, "error: failed to realloc buffer: %s\n", strerror(errno));
             return NULL;
         }
-
-        // Copy the input to the output string
-        strcpy(output, input);
     }
     return output;
 }
+
 
 // Function to parse the input command into tokens
 void parseInput(char *command, char **parsedCommands){
     char *token;
     char *commandCopy = strdup(command);
-    char *rest = commandCopy;
     int i = 0;
 
     // Tokenize the command string on spaces
-    while ((token = strtok_r(rest, " ", &rest))) {
+    while ((token = strtok_r(commandCopy, " ", &commandCopy))) {
         // Remove newline character if it exists
         token[strcspn(token, "\n")] = '\0';
         parsedCommands[i] = token;
@@ -138,23 +145,26 @@ void promptCommand(char **parsedCommands){
         printf("new_prompt: New prompt to be used\n");
         return;
     }
+
+    // Free the old prompt
+    free(prompt);
+
     if (parsedCommands[1] != NULL) {
-        char *newPrompt = malloc(1024); // Allocate memory for newPrompt
-        strcpy(newPrompt, parsedCommands[1]); // Copy the first part of the prompt
+        // Allocate memory for newPrompt
+        char *newPrompt = malloc(128);
 
         // Concatenate all other parts of the prompt
-        for (int i = 2; parsedCommands[i] != NULL; i++) {
-            strcat(newPrompt, " ");
+        for (int i = 1; parsedCommands[i] != NULL; i++) {
             strcat(newPrompt, parsedCommands[i]);
         }
 
-        free(prompt); // Free the old prompt
         prompt = newPrompt;
     } else {
-        free(prompt); // Free the old prompt
-        prompt = strdup("cwushell>"); // Allocate new memory for "cwushell"
+        // Reset to "cwushell"
+        prompt = strdup("cwushell>");
     } 
 }
+
 
 void fileinfoCommand(char **parsedCommands) {
     struct stat fileinfo;
