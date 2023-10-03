@@ -19,12 +19,13 @@ char *readInput(void);
 void parseInput(char *command, char **parsedCommands);
 void executeInput(char *command, char **parsedCommands);
 void exitCommand(char **parsedCommands);
-void fileinfoCommand(char **parsedCommands);
-void osinfoCommand(char **parsedCommands);
-void promptCommand(char **parsedCommands);
+int fileinfoCommand(char **parsedCommands);
+int osinfoCommand(char **parsedCommands);
+int promptCommand(char **parsedCommands);
 
-// Global variable for the command prompt
+// Global variables for the command prompt and exit code
 char *prompt = NULL;
+int exitCode = 0;
 
 int main()
 {
@@ -85,7 +86,8 @@ void parseInput(char *command, char **parsedCommands){
     char *commandCopy = strdup(command);
     int i = 0;
 
-    // Tokenize the command string on spaces
+    // Tokenize the command string on spaces, very helpful function
+    // https://www.geeksforgeeks.org/strtok-strtok_r-functions-c-examples/
     while ((token = strtok_r(commandCopy, " ", &commandCopy))) {
         // Remove newline character if it exists
         token[strcspn(token, "\n")] = '\0';
@@ -100,14 +102,14 @@ void executeInput(char *command, char **parsedCommands) {
     if (strcmp(parsedCommands[0], "exit") == 0) {
         exitCommand(parsedCommands);
     } else if (strcmp(parsedCommands[0], "prompt") == 0) {
-        promptCommand(parsedCommands);
+        exitCode = promptCommand(parsedCommands);
     } else if (strcmp(parsedCommands[0], "fileinfo") == 0) {
-        fileinfoCommand(parsedCommands);
+        exitCode = fileinfoCommand(parsedCommands);
     } else if (strcmp(parsedCommands[0], "osinfo") == 0) {
-        osinfoCommand(parsedCommands);
+        exitCode = osinfoCommand(parsedCommands);
     } else {
         // If no known command is found, execute the command using system()
-        system(command);
+        exitCode = system(command);
     }
 }
 
@@ -131,19 +133,19 @@ void exitCommand(char **parsedCommands){
             printf("Invalid exit status: %s\n", parsedCommands[1]);
         }
     } else {
-        // No exit status provided, so we exit with status 0.
-        exit(0);
+        // No exit status provided, so we exit with the last exit code
+        exit(exitCode);
     }   
 } 
 
-void promptCommand(char **parsedCommands){
+int promptCommand(char **parsedCommands){
     // Check for help switch
     if (parsedCommands[1] != NULL && (strcmp(parsedCommands[1], "-h") == 0 || strcmp(parsedCommands[1], "--help") == 0)) {
         printf("Usage: prompt [new_prompt]\n");
         printf("By default prompt will be reset to cwushell>\n");
         printf("Prompt supports an optional prompt value:\n");
         printf("new_prompt: New prompt to be used\n");
-        return;
+        return 0;
     }
 
     // Free the old prompt
@@ -163,10 +165,12 @@ void promptCommand(char **parsedCommands){
         // Reset to "cwushell"
         prompt = strdup("cwushell>");
     } 
+    return 0;
 }
 
 
-void fileinfoCommand(char **parsedCommands) {
+int fileinfoCommand(char **parsedCommands) {
+    // https://man7.org/linux/man-pages/man2/stat.2.html
     struct stat fileinfo;
     char *filename = parsedCommands[1];
 
@@ -177,19 +181,19 @@ void fileinfoCommand(char **parsedCommands) {
         printf("-i: Print the inode number of the file\n");
         printf("-t: Print the type of the file\n");
         printf("-m: Print the last modification date of the file\n");
-        return;
+        return 0;
     }
 
     // Check if filename is provided
     if (filename == NULL) {
         printf("Please provide a filename.\n");
-        return;
+        return 1;
     }
 
     // Get file info
     if (stat(filename, &fileinfo) != 0) {
         perror("Error getting file info");
-        return;
+        return 1;
     }
 
     int i_used = 0, t_used = 0, m_used = 0;
@@ -205,7 +209,7 @@ void fileinfoCommand(char **parsedCommands) {
             // If the argument is just '-', it's an error
             if (parsedCommands[i][1] == '\0') {
                 printf("Unknown switch: -\nTry 'fileinfo --help' for more information.\n");
-                return;
+                return 1;
             }
             // Iterate over the characters in the switch
             for (int j = 1; parsedCommands[i][j] != '\0'; j++) {
@@ -221,7 +225,7 @@ void fileinfoCommand(char **parsedCommands) {
                         break;
                     default:
                         printf("Unknown switch: -%c\nTry 'fileinfo --help' for more information.\n", parsedCommands[i][j]);
-                        return; // Stop execution if an unknown switch is encountered
+                        return 1; // Stop execution if an unknown switch is encountered
                 }
             }
         } 
@@ -243,13 +247,17 @@ void fileinfoCommand(char **parsedCommands) {
     }
     if (m_used) {
         char date[20];
+        // https://www.geeksforgeeks.org/strftime-function-in-c/
+        // black magic
         strftime(date, 20, "%Y-%m-%d %H:%M:%S", localtime(&(fileinfo.st_mtime)));
         printf("Last modification date: %s\n", date);
     }
-    
+    return 0;
 }
 
-void osinfoCommand(char **parsedCommands) {
+int osinfoCommand(char **parsedCommands) {
+    // https://dextutor.com/how-to-get-os-version-in-c/
+    // https://stackoverflow.com/questions/6315666/c-get-linux-distribution-name-version
     struct utsname osinfo;
     uname(&osinfo);
 
@@ -260,7 +268,7 @@ void osinfoCommand(char **parsedCommands) {
         printf("-s: Print the operating system name\n");
         printf("-v: Print the operating system version\n");
         printf("-a: Print the computer architecture\n");
-        return;
+        return 0;
     }
 
     int s_used = 0, v_used = 0, a_used = 0;
@@ -272,7 +280,7 @@ void osinfoCommand(char **parsedCommands) {
             // If the argument is just '-', it's an error
             if (parsedCommands[i][1] == '\0') {
                 printf("Unknown switch: -\nTry 'osinfo --help' for more information.\n");
-                return;
+                return 1;
             }
             // Iterate over the characters in the switch
             for (int j = 1; parsedCommands[i][j] != '\0'; j++) {
@@ -288,13 +296,13 @@ void osinfoCommand(char **parsedCommands) {
                         break;
                     default:
                         printf("Unknown switch: -%c\nTry 'osinfo --help' for more information.\n", parsedCommands[i][j]);
-                        return; // Stop execution if an unknown switch is encountered
+                        return 1;// Stop execution if an unknown switch is encountered
                 }
             }
         } else {
             // Arguments that don't start with '-' are errors
             printf("Unknown argument: %s\nTry 'osinfo --help' for more information.\n", parsedCommands[i]);
-            return;
+            return 1;
         }
     }
 
@@ -302,4 +310,6 @@ void osinfoCommand(char **parsedCommands) {
     if (s_used) printf("Operating System: %s\n", osinfo.sysname);
     if (v_used) printf("OS Version: %s\n", osinfo.release);
     if (a_used) printf("Computer Architecture: %s\n", osinfo.machine);
+
+    return 0;
 }
