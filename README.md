@@ -6,6 +6,7 @@ CWUshell is a custom Linux shell developed for CS470 in C.
 
 CWUShell supports the following commands:
 
+- `manual`: Shhows usage instructions for all commands.
 - `exit`: Exits the shell.
 - `prompt`: Customizes the command prompt.
 - `fileinfo`: Provides information about a file.
