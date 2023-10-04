@@ -19,6 +19,7 @@ char *readInput(void);
 void parseInput(char *command, char **parsedCommands);
 void executeInput(char *command, char **parsedCommands);
 void exitCommand(char **parsedCommands);
+int manualCommand(char **parsedCommands);
 int fileinfoCommand(char **parsedCommands);
 int osinfoCommand(char **parsedCommands);
 int promptCommand(char **parsedCommands);
@@ -101,6 +102,8 @@ void parseInput(char *command, char **parsedCommands){
 void executeInput(char *command, char **parsedCommands) {
     if (strcmp(parsedCommands[0], "exit") == 0) {
         exitCommand(parsedCommands);
+    } else if (strcmp(parsedCommands[0], "manual") == 0) {
+        exitCode = manualCommand(parsedCommands);
     } else if (strcmp(parsedCommands[0], "prompt") == 0) {
         exitCode = promptCommand(parsedCommands);
     } else if (strcmp(parsedCommands[0], "fileinfo") == 0) {
@@ -311,5 +314,33 @@ int osinfoCommand(char **parsedCommands) {
     if (v_used) printf("OS Version: %s\n", osinfo.release);
     if (a_used) printf("Computer Architecture: %s\n", osinfo.machine);
 
+    return 0;
+}
+
+int manualCommand(char **parsedCommands){
+    printf("Name: Prompt\n");
+    printf("Usage: prompt [new_prompt]\n");
+    printf("By default prompt will be reset to cwushell>\n");
+    printf("Prompt supports an optional prompt value:\n");
+    printf("new_prompt: New prompt to be used\n\n");
+
+    printf("Name: File Information\n");
+    printf("Usage: fileinfo [-switch] filename\n");
+    printf("fileinfo supports the following switches:\n");
+    printf("-i: Print the inode number of the file\n");
+    printf("-t: Print the type of the file\n");
+    printf("-m: Print the last modification date of the file\n\n");
+
+    printf("Name: Operating System Information\n");
+    printf("Usage: osinfo -switch\n");
+    printf("osinfo supports the following switches:\n");
+    printf("-s: Print the operating system name\n");
+    printf("-v: Print the operating system version\n");
+    printf("-a: Print the computer architecture\n\n");
+
+    printf("Name: Exit\n");
+    printf("Usage: exit [n]\n");
+    printf("Exit supports an optional exit value:\n");
+    printf("n: Exit value of the shell's execution\n");
     return 0;
 }
